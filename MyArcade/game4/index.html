@@ -1,32 +1,131 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>マグマ脱出</title>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>ピン抜きパズル</title>
     <style>
-        body { text-align: center; font-family: sans-serif; background: #111; color: #fff; margin: 0; padding-top: 30px; }
-        .back-btn { background: #555; color: #fff; font-size: 14px; padding: 8px 15px; border: none; border-radius: 5px; }
-        #game-screen { background: #222; width: 80%; height: 300px; margin: 20px auto; border: 3px solid #ff4500; position: relative; border-radius: 10px; overflow: hidden; }
-        #player { font-size: 30px; position: absolute; left: 45%; bottom: 10px; transition: bottom 0.1s; }
-        #lava { background: linear-gradient(transparent, #ff4500); width: 100%; position: absolute; bottom: 0; left: 0; transition: height 0.1s; }
-        .tap-zone { background: #ff4500; color: white; width: 80%; padding: 20px; font-size: 24px; font-weight: bold; border-radius: 10px; border: none; }
+        body { text-align: center; font-family: sans-serif; background: #1a1a2e; color: #fff; margin: 0; padding-top: 30px; }
+        .back-btn { background: #555; color: #fff; font-size: 14px; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; }
+        
+        /* パズル画面の枠 */
+        #game-screen { background: #222; width: 280px; height: 350px; margin: 20px auto; border: 4px solid #444; position: relative; border-radius: 10px; overflow: hidden; }
+        
+        /* 部屋の仕切り（ピン）のデザイン */
+        .pin { position: absolute; background: #ffcc00; height: 10px; font-size: 12px; color: #000; font-weight: bold; text-align: center; line-height: 10px; cursor: pointer; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        #pin1 { left: 0; top: 120px; width: 180px; }
+        #pin2 { right: 0; top: 200px; width: 180px; }
+        
+        /* 液体やキャラクターの配置 */
+        .fluid { position: absolute; width: 80px; height: 60px; border-radius: 10px; transition: all 0.8s ease; font-size: 30px; display: flex; align-items: center; justify-content: center; }
+        #water { background: rgba(0, 100, 255, 0.7); left: 30px; top: 40px; }
+        #lava { background: rgba(255, 50, 0, 0.7); left: 160px; top: 40px; }
+        #player { position: absolute; left: 115px; bottom: 20px; font-size: 40px; transition: all 0.5s; }
+        
+        #msg { font-size: 18px; font-weight: bold; height: 30px; margin: 15px; color: #ffcc00; }
+        #retry-btn { display: none; background: #28a745; color: white; font-size: 16px; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
     <button class="back-btn" onclick="location.href='../index.html'">🏠 戻る</button>
-    <h1>🌋 マグマ脱出</h1>
-    <h2>スコア: <span id="score">0</span>m (最高: <span id="high">0</span>m)</h2>
-    <div id="game-screen"><div id="lava" style="height: 0px;"></div><div id="player">🏃</div></div>
-    <button class="tap-zone" onclick="jump()">連打して登れ！</button>
+    <h1>🧪 ピン抜き誘導パズル</h1>
+    <p>ピン（黄色の棒）をタップして抜き、水を人に届けろ！</p>
+    
+    <div id="game-screen">
+        <!-- 液体（水と溶岩） -->
+        <div class="fluid" id="water">💧</div>
+        <div class="fluid" id="lava">🔥</div>
+        
+        <!-- タップして抜けるピン -->
+        <div class="pin" id="pin1" onclick="pullPin(1)">◀ ピン1を抜く</div>
+        <div class="pin" id="pin2" onclick="pullPin(2)">ピン2を抜く ▶</div>
+        
+        <!-- 救出するキャラクター -->
+        <div id="player">🏃</div>
+    </div>
+
+    <div id="msg"></div>
+    <button id="retry-btn" onclick="resetGame()">🔄 もう一度挑戦</button>
+
     <script>
-        let pHeight = 10, lavaHeight = 0, score = 0, active = true;
-        let high = localStorage.getItem('run_high') || 0; document.getElementById('high').innerText = high;
-        let timer = setInterval(() => {
-            if(!active) return; lavaHeight += 1.5; if(pHeight > 10) pHeight -= 1;
-            document.getElementById('player').style.bottom = pHeight + 'px'; document.getElementById('lava').style.height = lavaHeight + 'px';
-            if (lavaHeight >= pHeight) { active = false; alert(`ゲームオーバー！記録: ${score}m`); reset(); }
-        }, 50);
-        function jump() { if(!active) return; pHeight += 12; score = Math.max(score, Math.floor(pHeight/10)); document.getElementById('score').innerText = score; }
-        function reset() { pHeight = 10; lavaHeight = 0; if(score > high) { high = score; localStorage.setItem('run_high', high); } score = 0; active = true; }
+        let pin1Pulled = false;
+        let pin2Pulled = false;
+        let isGameOver = false;
+
+        function pullPin(num) {
+            if (isGameOver) return;
+
+            if (num === 1 && !pin1Pulled) {
+                pin1Pulled = true;
+                document.getElementById('pin1').style.left = '-200px'; // ピンを左に引き抜く
+                
+                // ピン1を抜くと、水が真ん中の段（ピン2の上）に落ちる
+                setTimeout(() => {
+                    if(!isGameOver) {
+                        document.getElementById('water').style.left = '160px';
+                        document.getElementById('water').style.top = '130px';
+                    }
+                }, 400);
+            } 
+            
+            if (num === 2 && !pin2Pulled) {
+                pin2Pulled = true;
+                document.getElementById('pin2').style.right = '-200px'; // ピンを右に引き抜く
+                
+                // ピン2を抜いたとき、上の部屋に何があるかで展開が変わる
+                setTimeout(() => {
+                    // もしピン1を抜く前にピン2を抜くと、右側にあった溶岩が先に下に落ちてしまう（失敗）
+                    if (!pin1Pulled) {
+                        document.getElementById('lava').style.left = '115px';
+                        document.getElementById('lava').style.top = '270px';
+                        setTimeout(failByLava, 600);
+                    } else {
+                        // ピン1が先に抜けていれば、水と溶岩が混ざって安全な「冷えた岩」になり、それが下に落ちる（大成功）
+                        document.getElementById('water').style.left = '115px';
+                        document.getElementById('water').style.top = '270px';
+                        document.getElementById('water').style.background = 'rgba(100, 100, 100, 0.8)';
+                        document.getElementById('water').innerText = '🪨'; // 岩に変化
+                        
+                        document.getElementById('lava').style.display = 'none'; // 溶岩は消滅
+                        setTimeout(success, 600);
+                    }
+                }, 400);
+            }
+        }
+
+        function failByLava() {
+            isGameOver = true;
+            document.getElementById('player').innerText = '💀';
+            document.getElementById('msg').innerHTML = "<span style='color:#ff4444;'>💥 ギャー！溶岩が直撃してしまった！</span>";
+            document.getElementById('retry-btn').style.display = 'inline-block';
+        }
+
+        function success() {
+            isGameOver = true;
+            document.getElementById('player').innerText = '👑';
+            document.getElementById('msg').innerHTML = "<span style='color:#00ffcc;'>🎉 ナイス！安全に救出成功！</span>";
+            document.getElementById('retry-btn').style.display = 'inline-block';
+        }
+
+        function resetGame() {
+            pin1Pulled = false;
+            pin2Pulled = false;
+            isGameOver = false;
+            
+            document.getElementById('pin1').style.left = '0';
+            document.getElementById('pin2').style.right = '0';
+            
+            document.getElementById('water').style.left = '30px';
+            document.getElementById('water').style.top = '40px';
+            document.getElementById('water').style.background = 'rgba(0, 100, 255, 0.7)';
+            document.getElementById('water').innerText = '💧';
+            
+            document.getElementById('lava').style.left = '160px';
+            document.getElementById('lava').style.top = '40px';
+            document.getElementById('lava').style.display = 'flex';
+            
+            document.getElementById('player').innerText = '🏃';
+            document.getElementById('msg').innerText = '';
+            document.getElementById('retry-btn').style.display = 'none';
+        }
     </script>
 </body>
 </html>
