@@ -15,17 +15,39 @@
     <button class="back-btn" onclick="location.href='../index.html'">🏠 戻る</button>
     <h1>🌋 マグマ脱出</h1>
     <h2>スコア: <span id="score">0</span>m (最高: <span id="high">0</span>m)</h2>
-    <div id="game-screen"><div id="lava" style="height: 0px;"></div><div id="player">🏃</div></div>
+    <div id="game-screen">
+        <div id="lava" style="height: 0px;"></div>
+        <div id="player">🏃</div>
+    </div>
     <button class="tap-zone" onclick="jump()">連打して登れ！</button>
     <script>
         let pHeight = 10, lavaHeight = 0, score = 0, active = true;
         let high = localStorage.getItem('run_high') || 0; document.getElementById('high').innerText = high;
+        
         let timer = setInterval(() => {
-            if(!active) return; lavaHeight += 1.5; if(pHeight > 10) pHeight -= 1;
-            document.getElementById('player').style.bottom = pHeight + 'px'; document.getElementById('lava').style.height = lavaHeight + 'px';
+            if(!active) return;
+            lavaHeight += 1.5; // マグマの上昇速度
+            if(pHeight > 10) pHeight -= 1; // 重力で落ちる
+            
+            document.getElementById('player').style.bottom = pHeight + 'px';
+            document.getElementById('lava').style.height = lavaHeight + 'px';
+            
             if (lavaHeight >= pHeight) { active = false; alert(`ゲームオーバー！記録: ${score}m`); reset(); }
         }, 50);
-        function jump() { if(!active) return; pHeight += 12; score = Math.max(score, Math.floor(pHeight/10)); document.getElementById('score').innerText = score; }
+        
+        function jump() { 
+            if(!active) return; 
+            pHeight += 12; 
+            
+            // 【修正部分】ゲーム画面の高さ(300px)からプレイヤーのサイズ(約30px)を引いた「270px」を天井にします
+            if (pHeight > 270) {
+                pHeight = 270;
+            }
+            
+            score = Math.max(score, Math.floor(pHeight/10)); 
+            document.getElementById('score').innerText = score; 
+        }
+        
         function reset() { pHeight = 10; lavaHeight = 0; if(score > high) { high = score; localStorage.setItem('run_high', high); } score = 0; active = true; }
     </script>
 </body>
