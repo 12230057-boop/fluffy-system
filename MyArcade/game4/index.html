@@ -5,50 +5,100 @@
     <style>
         body { text-align: center; font-family: sans-serif; background: #111; color: #fff; margin: 0; padding-top: 30px; }
         .back-btn { background: #555; color: #fff; font-size: 14px; padding: 8px 15px; border: none; border-radius: 5px; }
-        #game-screen { background: #222; width: 80%; height: 300px; margin: 20px auto; border: 3px solid #ff4500; position: relative; border-radius: 10px; overflow: hidden; }
-        #player { font-size: 30px; position: absolute; left: 45%; bottom: 10px; transition: bottom 0.1s; }
-        #lava { background: linear-gradient(transparent, #ff4500); width: 100%; position: absolute; bottom: 0; left: 0; transition: height 0.1s; }
-        .tap-zone { background: #ff4500; color: white; width: 80%; padding: 20px; font-size: 24px; font-weight: bold; border-radius: 10px; border: none; }
+        #game-screen { background: #222; background-image: linear-gradient(#333 1px, transparent 1px); background-size: 100% 20px; width: 80%; height: 300px; margin: 20px auto; border: 3px solid #ff4500; position: relative; border-radius: 10px; overflow: hidden; }
+        #player { font-size: 30px; position: absolute; left: 45%; bottom: 10px; transition: bottom 0.05s; }
+        #lava { background: linear-gradient(transparent, #ff4500); width: 100%; position: absolute; bottom: 0; left: 0; transition: height 0.05s; }
+        .tap-zone { background: #ff4500; color: white; width: 80%; padding: 20px; font-size: 24px; font-weight: bold; border-radius: 10px; border: none; -webkit-user-select: none; user-select: none; }
+        #start-msg { position: absolute; width: 100%; top: 40%; text-align: center; font-size: 20px; font-weight: bold; color: #ffcc00; animation: blink 1s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
     </style>
 </head>
 <body>
     <button class="back-btn" onclick="location.href='../index.html'">🏠 戻る</button>
-    <h1>🌋 マグマ脱出</h1>
+    <h1>🌋 マグマ脱出・緊張感MAX</h1>
     <h2>スコア: <span id="score">0</span>m (最高: <span id="high">0</span>m)</h2>
     <div id="game-screen">
+        <div id="start-msg">⚠️ ボタンを押してスタート！</div>
         <div id="lava" style="height: 0px;"></div>
         <div id="player">🏃</div>
     </div>
-    <button class="tap-zone" onclick="jump()">連打して登れ！</button>
+    <button class="tap-zone" id="main-btn" onclick="jump()">連打して登れ！</button>
+
     <script>
-        let pHeight = 10, lavaHeight = 0, score = 0, active = true;
-        let high = localStorage.getItem('run_high') || 0; document.getElementById('high').innerText = high;
+        let pHeight = 10, lavaHeight = 0, score = 0, active = false; // 【修正】最初は動かないようにfalseに
+        let isStarted = false; // スタートしたかどうかの判定フラグ
+        let bgY = 0;
+        let timer = null;
+        let high = localStorage.getItem('run_high') || 0; 
+        document.getElementById('high').innerText = high;
         
-        let timer = setInterval(() => {
+        function gameLoop() {
             if(!active) return;
-            lavaHeight += 1.5; // マグマの上昇速度
-            if(pHeight > 10) pHeight -= 1; // 重力で落ちる
+            
+            // スコアが増えるほどマグマがスピードアップ
+            let speedFactor = 1.5 + (score * 0.005);
+            
+            if (pHeight >= 230) {
+                lavaHeight += speedFactor;
+            } else {
+                pHeight -= 2.0; 
+                if(pHeight < 10) pHeight = 10;
+                lavaHeight += speedFactor;
+            }
+            
+            if (lavaHeight >= pHeight) { 
+                active = false; 
+                clearInterval(timer);
+                alert(`ゲームオーバー！記録: ${score}m`); 
+                reset(); 
+                return;
+            }
             
             document.getElementById('player').style.bottom = pHeight + 'px';
             document.getElementById('lava').style.height = lavaHeight + 'px';
-            
-            if (lavaHeight >= pHeight) { active = false; alert(`ゲームオーバー！記録: ${score}m`); reset(); }
-        }, 50);
-        
-        function jump() { 
-            if(!active) return; 
-            pHeight += 12; 
-            
-            // 【修正部分】ゲーム画面の高さ(300px)からプレイヤーのサイズ(約30px)を引いた「270px」を天井にします
-            if (pHeight > 270) {
-                pHeight = 270;
-            }
-            
-            score = Math.max(score, Math.floor(pHeight/10)); 
-            document.getElementById('score').innerText = score; 
         }
         
-        function reset() { pHeight = 10; lavaHeight = 0; if(score > high) { high = score; localStorage.setItem('run_high', high); } score = 0; active = true; }
+        function jump() { 
+            // 【重要】最初の1タップ目でゲームを動かす
+            if (!isStarted) {
+                isStarted = true;
+                active = true;
+                document.getElementById('start-msg').style.display = 'none'; // メッセージを消す
+                timer = setInterval(gameLoop, 50); // マグマのタイマーを始動
+            }
+            
+            if(!active) return; 
+            
+            score += 1;
+            document.getElementById('score').innerText = score; 
+            
+            if (pHeight < 230) {
+                pHeight += 18;
+            } else {
+                bgY += 15;
+                document.getElementById('game-screen').style.backgroundPositionY = bgY + 'px';
+            }
+        }
+        
+        function reset() { 
+            pHeight = 10; 
+            lavaHeight = 0; 
+            bgY = 0;
+            isStarted = false;
+            active = false;
+            document.getElementById('game-screen').style.backgroundPositionY = '0px';
+            document.getElementById('player').style.bottom = '10px';
+            document.getElementById('lava').style.height = '0px';
+            document.getElementById('start-msg').style.display = 'block'; // メッセージを復活
+            
+            if(score > high) { 
+                high = score; 
+                localStorage.setItem('run_high', high); 
+                document.getElementById('high').innerText = high;
+            } 
+            score = 0; 
+            document.getElementById('score').innerText = score;
+        }
     </script>
 </body>
 </html>
