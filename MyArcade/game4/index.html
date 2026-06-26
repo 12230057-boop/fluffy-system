@@ -7,67 +7,74 @@
         .back-btn { background: #555; color: #fff; font-size: 14px; padding: 8px 15px; border: none; border-radius: 5px; }
         #game-screen { background: #222; background-image: linear-gradient(#333 1px, transparent 1px); background-size: 100% 20px; width: 80%; height: 300px; margin: 20px auto; border: 3px solid #ff4500; position: relative; border-radius: 10px; overflow: hidden; }
         #player { font-size: 30px; position: absolute; left: 45%; bottom: 10px; transition: bottom 0.05s; }
-        #lava { background: linear-gradient(transparent, #ff4500); width: 100%; position: absolute; bottom: 0; left: 0; transition: height 0.05s; }
+        #lava { background: linear-gradient(transparent, #ff4500); width: 100%; position: absolute; bottom: 0; left: 0; height: 0px; transition: height 0.05s; }
         .tap-zone { background: #ff4500; color: white; width: 80%; padding: 20px; font-size: 24px; font-weight: bold; border-radius: 10px; border: none; -webkit-user-select: none; user-select: none; }
-        #start-msg { position: absolute; width: 100%; top: 40%; text-align: center; font-size: 20px; font-weight: bold; color: #ffcc00; animation: blink 1s infinite; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        #start-msg { position: absolute; width: 100%; top: 40%; text-align: center; font-size: 18px; font-weight: bold; color: #ffcc00; z-index: 10; }
     </style>
 </head>
 <body>
     <button class="back-btn" onclick="location.href='../index.html'">🏠 戻る</button>
-    <h1>🌋 マグマ脱出・緊張感MAX</h1>
+    <h1>🌋 マグマ脱出・完全版</h1>
     <h2>スコア: <span id="score">0</span>m (最高: <span id="high">0</span>m)</h2>
     <div id="game-screen">
         <div id="start-msg">⚠️ ボタンを押してスタート！</div>
-        <div id="lava" style="height: 0px;"></div>
+        <div id="lava"></div>
         <div id="player">🏃</div>
     </div>
-    <button class="tap-zone" id="main-btn" onclick="jump()">連打して登れ！</button>
+    <button class="tap-zone" onclick="jump()">連打して登れ！</button>
 
     <script>
-        let pHeight = 10, lavaHeight = 0, score = 0, active = false; // 【修正】最初は動かないようにfalseに
-        let isStarted = false; // スタートしたかどうかの判定フラグ
+        let pHeight = 10, lavaHeight = 0, score = 0;
+        let isStarted = false; 
         let bgY = 0;
-        let timer = null;
+        let timer = null; // タイマー管理用
+        
         let high = localStorage.getItem('run_high') || 0; 
         document.getElementById('high').innerText = high;
         
+        // 画面の初期状態を強制リセット
+        document.getElementById('lava').style.height = '0px';
+        document.getElementById('player').style.bottom = '10px';
+
         function gameLoop() {
-            if(!active) return;
-            
-            // スコアが増えるほどマグマがスピードアップ
-            let speedFactor = 1.5 + (score * 0.005);
+            // スコアが増えるほどマグマが徐々に加速（最初の猶予を長めに調整）
+            let speedFactor = 1.0 + (score * 0.004);
             
             if (pHeight >= 230) {
+                // 天井にいる時はプレイヤー固定、マグマだけ上昇
                 lavaHeight += speedFactor;
             } else {
+                // 通常時は重力落下とマグマ上昇
                 pHeight -= 2.0; 
                 if(pHeight < 10) pHeight = 10;
                 lavaHeight += speedFactor;
             }
             
-            if (lavaHeight >= pHeight) { 
-                active = false; 
-                clearInterval(timer);
-                alert(`ゲームオーバー！記録: ${score}m`); 
-                reset(); 
-                return;
-            }
-            
+            // 画面表示を滑らかに更新
             document.getElementById('player').style.bottom = pHeight + 'px';
             document.getElementById('lava').style.height = lavaHeight + 'px';
+
+            // ゲームオーバー判定
+            if (lavaHeight >= pHeight) { 
+                // 【超重要】タイマーを完全に破壊して暴走を止める
+                clearInterval(timer);
+                timer = null;
+                
+                alert(`ゲームオーバー！記録: ${score}m`); 
+                reset(); 
+            }
         }
         
         function jump() { 
-            // 【重要】最初の1タップ目でゲームを動かす
-            if (!isStarted) {
+            // 最初の1タップ目で「1回だけ」確実にタイマーを起動
+            if (!isStarted && timer === null) {
                 isStarted = true;
-                active = true;
-                document.getElementById('start-msg').style.display = 'none'; // メッセージを消す
-                timer = setInterval(gameLoop, 50); // マグマのタイマーを始動
+                document.getElementById('start-msg').style.display = 'none';
+                timer = setInterval(gameLoop, 50); 
             }
             
-            if(!active) return; 
+            // スタートしていない、または終了している時はタップを無効化
+            if (!isStarted) return;
             
             score += 1;
             document.getElementById('score').innerText = score; 
@@ -81,16 +88,23 @@
         }
         
         function reset() { 
+            // すべての変数を完全に初期化
+            if (timer !== null) {
+                clearInterval(timer);
+                timer = null;
+            }
             pHeight = 10; 
             lavaHeight = 0; 
             bgY = 0;
             isStarted = false;
-            active = false;
+            
+            // 画面の見た目を初期状態に戻す
             document.getElementById('game-screen').style.backgroundPositionY = '0px';
             document.getElementById('player').style.bottom = '10px';
             document.getElementById('lava').style.height = '0px';
-            document.getElementById('start-msg').style.display = 'block'; // メッセージを復活
+            document.getElementById('start-msg').style.display = 'block';
             
+            // ハイスコアの記録
             if(score > high) { 
                 high = score; 
                 localStorage.setItem('run_high', high); 
