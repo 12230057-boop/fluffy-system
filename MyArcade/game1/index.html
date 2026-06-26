@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>聖剣鍛造RPG</title>
+    <style>
+        body { text-align: center; font-family: sans-serif; background: #222; color: #fff; padding-top: 30px; }
+        button { font-size: 20px; padding: 15px 30px; margin: 10px; cursor: pointer; border-radius: 10px; border: none; }
+        .back-btn { background: #555; color: #fff; font-size: 14px; padding: 8px 15px; }
+        #log { margin-top: 20px; color: #aaa; min-height: 60px; }
+    </style>
+</head>
+<body>
+    <button class="back-btn" onclick="location.href='../index.html'">🏠 メニューに戻る</button>
+    <h1>⚔️ 無限・聖剣鍛造RPG</h1>
+    <h2>現在の攻撃力: <span id="atk">10</span></h2>
+    <p>次の成功確率: <span id="rate">100</span>%</p>
+    <button onclick="forge()" style="background:#d4af37; color:#000; font-weight:bold;">鍛造する</button>
+    <div id="log"></div>
+    <script>
+        let atk = Number(localStorage.getItem('my_sword_atk')) || 10;
+        document.getElementById('atk').innerText = atk;
+        function getSuccessRate() { return Math.max(10, Math.floor(100 - (Math.log10(atk) * 20))); }
+        document.getElementById('rate').innerText = getSuccessRate();
+        function forge() {
+            let rate = getSuccessRate(); let logDiv = document.getElementById('log');
+            if (Math.random() * 100 < rate) {
+                atk *= 2; logDiv.innerHTML = "<span style='color:#0f0;'>✨ 成功！攻撃力が2倍になった！</span>";
+            } else {
+                atk = Math.max(10, Math.floor(atk / 2)); logDiv.innerHTML = "<span style='color:#f00;'>💥 失敗！半分にこぼれた…</span>";
+            }
+            document.getElementById('atk').innerText = atk; document.getElementById('rate').innerText = getSuccessRate();
+            localStorage.setItem('my_sword_atk', atk);
+        }
+    </script>
+</body>
+</html>

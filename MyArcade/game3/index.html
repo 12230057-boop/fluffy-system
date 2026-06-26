@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>広告でよく見るタワーバトル</title>
+    <style>
+        body { text-align: center; font-family: sans-serif; background: #1a1c2e; color: #fff; margin: 0; padding-top: 20px; }
+        .back-btn { background: #555; color: #fff; font-size: 14px; padding: 8px 15px; border: none; border-radius: 5px; }
+        #hero-area { background: #2a3b5c; width: 85%; max-width: 350px; margin: 15px auto; padding: 15px; border-radius: 10px; border: 2px solid #4a6fa5; }
+        .power-badge { background: #ffcc00; color: #000; font-weight: bold; padding: 3px 10px; border-radius: 5px; font-size: 18px; }
+        .tower { display: flex; flex-direction: column-reverse; width: 85%; max-width: 350px; margin: 20px auto; background: #333; border: 4px solid #555; border-radius: 10px; overflow: hidden; }
+        .floor { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 2px solid #444; cursor: pointer; background: #442222; }
+        .floor.cleared { background: #224422; opacity: 0.4; pointer-events: none; }
+        .enemy-info { display: flex; align-items: center; gap: 10px; }
+        .enemy-power { background: #ff4444; color: #fff; font-weight: bold; padding: 2px 8px; border-radius: 5px; }
+        .reward-info { font-size: 12px; color: #0f0; }
+        #msg { height: 30px; font-weight: bold; font-size: 16px; margin: 15px; }
+        #next-btn { display: none; background: #28a745; color: white; font-size: 18px; padding: 10px 20px; border: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <button class="back-btn" onclick="location.href='../index.html'">🏠 メメニューに戻る</button>
+    <h1>🏰 偽広告風・無限タワー</h1>
+    <div id="hero-area">⚔️ あなたの戦闘力: <span class="power-badge" id="hero-power">10</span></div>
+    <div id="msg"></div><button id="next-btn" onclick="nextStage()">🎉 次のステージへ</button>
+    <div class="tower" id="tower"></div>
+    <script>
+        let heroPower = Number(localStorage.getItem('adv_hero_power')) || 10, currentStage = 1, floorsData = [];
+        function generateStage() {
+            document.getElementById('next-btn').style.display = 'none'; document.getElementById('msg').innerText = `ステージ ${currentStage}`;
+            const towerDiv = document.getElementById('tower'); towerDiv.innerHTML = ''; floorsData = [];
+            let base = heroPower;
+            let floorConfigs = [
+                { type: 'enemy', power: Math.floor(base * 0.6), reward: Math.floor(base * 0.4), icon: '👹' },
+                { type: 'item', power: 0, reward: Math.floor(base * 0.5), icon: '🧪' },
+                { type: 'boss', power: Math.floor(base * 1.2), reward: Math.floor(base * 0.8), icon: '👑' }
+            ].sort(() => Math.random() - 0.5);
+            floorConfigs.forEach((config, index) => {
+                floorsData.push({ ...config, cleared: false });
+                const floorEl = document.createElement('div'); floorEl.className = 'floor'; floorEl.onclick = () => attackFloor(index);
+                floorEl.innerHTML = config.type === 'item' ? `<span>${config.icon} ポーション</span><div class="enemy-info"><span class="reward-info">+${config.reward}</span></div>` : `<span>${config.icon} 敵兵</span><div class="enemy-info"><span class="reward-info">+${config.reward}</span><span class="enemy-power">P: ${config.power}</span></div>`;
+                towerDiv.appendChild(floorEl);
+            });
+            document.getElementById('hero-power').innerText = heroPower;
+        }
+        function attackFloor(index) {
+            let floor = floorsData[index]; let msgEl = document.getElementById('msg');
+            if (heroPower >= floor.power) {
+                heroPower += floor.reward; floor.cleared = true;
+                document.getElementsByClassName('floor')[index].classList.add('cleared');
+                msgEl.innerHTML = `<span style='color:#0f0;'>⚔️ 勝利！ パワー+ ${floor.reward}</span>`;
+                localStorage.setItem('adv_hero_power', heroPower); document.getElementById('hero-power').innerText = heroPower;
+                if (floorsData.every(f => f.cleared)) { msgEl.innerHTML = `🏰 ステージ ${currentStage} クリア！`; document.getElementById('next-btn').style.display = 'inline-block'; }
+            } else {
+                msgEl.innerHTML = `<span style='color:#ff4444;'>💥 敗北！パワーが10にリセットされた…</span>`; heroPower = 10; currentStage = 1; localStorage.setItem('adv_hero_power', heroPower); setTimeout(generateStage, 2000);
+            }
+        }
+        function nextStage() { currentStage++; generateStage(); } generateStage();
+    </script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>100を狙え</title>
+    <style>
+        body { text-align: center; font-family: sans-serif; background: #1e1e1e; color: #fff; margin: 0; padding-top: 30px; }
+        .back-btn { background: #555; color: #fff; font-size: 14px; padding: 8px 15px; border: none; }
+        button { font-size: 18px; padding: 12px 24px; margin: 10px; border-radius: 8px; border: none; cursor: pointer; }
+        #num { font-size: 80px; font-weight: bold; color: #ffcc00; margin: 10px; }
+    </style>
+</head>
+<body>
+    <button class="back-btn" onclick="location.href='../index.html'">🏠 戻る</button>
+    <h1>🎲 100狙いチキンレース</h1>
+    <h2>現在の合計:</h2><div id="num">0</div>
+    <button onclick="roll()" style="background:#28a745; color:#fff;">🎲 数字を足す(+1~20)</button>
+    <button onclick="collect()" style="background:#007bff; color:#fff;">✋ ここで確定する</button>
+    <p id="msg" style="font-size:18px; color:#ff4444; height:20px;"></p>
+    <p>現在のハイスコア: <span id="high">0</span>点</p>
+    <script>
+        let total = 0, high = localStorage.getItem('dice_high') || 0; document.getElementById('high').innerText = high;
+        function roll() {
+            document.getElementById('msg').innerText = ""; let r = Math.floor(Math.random() * 20) + 1; total += r; document.getElementById('num').innerText = total;
+            if(total > 100) { document.getElementById('msg').innerText = `💥 100を超えた！バースト！(+${r})`; total = 0; document.getElementById('num').innerText = total; }
+        }
+        function collect() { if(total === 0) return; if(total > high) { high = total; localStorage.setItem('dice_high', high); document.getElementById('high').innerText = high; } alert(`得点を確定しました！記録: ${total}点`); total = 0; document.getElementById('num').innerText = total; }
+    </script>
+</body>
+</html>

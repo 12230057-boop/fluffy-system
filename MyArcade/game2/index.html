@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>無限スロット</title>
+    <style>
+        body { text-align: center; font-family: sans-serif; background: #111; color: #fff; padding-top: 30px; }
+        .slot-container { font-size: 50px; background: #333; padding: 20px; width: 200px; margin: 20px auto; border-radius: 10px; letter-spacing: 10px; }
+        button { font-size: 20px; padding: 15px 30px; margin: 10px; cursor: pointer; border-radius: 10px; border: none; }
+        .back-btn { background: #555; color: #fff; font-size: 14px; padding: 8px 15px; }
+    </style>
+</head>
+<body>
+    <button class="back-btn" onclick="location.href='../index.html'">🏠 メニューに戻る</button>
+    <h1>🎰 脳汁・無限スロット</h1>
+    <h2>所持コイン: <span id="coins">100</span>枚</h2>
+    <div class="slot-container" id="display">🍒🍒🍒</div>
+    <button onclick="spin()" style="background:#ff4500; color:#fff;">10枚で回す！</button>
+    <p id="msg" style="color:#ffd700; font-weight:bold; height:20px;"></p>
+    <script>
+        let coins = Number(localStorage.getItem('my_slot_coins')) || 100;
+        document.getElementById('coins').innerText = coins; const emojis = ["🍒", "🍉", "🔔", "🌟", "7️⃣"];
+        function spin() {
+            if (coins < 10) { document.getElementById('msg').innerText = "コイン補給！(+100枚)"; coins += 100; document.getElementById('coins').innerText = coins; return; }
+            coins -= 10; document.getElementById('msg').innerText = "";
+            let r1 = emojis[Math.floor(Math.random() * emojis.length)], r2 = emojis[Math.floor(Math.random() * emojis.length)], r3 = emojis[Math.floor(Math.random() * emojis.length)];
+            document.getElementById('display').innerText = r1 + r2 + r3;
+            if (r1 === r2 && r2 === r3) { let win = r1 === "7️⃣" ? 500 : 100; coins += win; document.getElementById('msg').innerText = `🎉 当たり！ +${win}枚！`; }
+            document.getElementById('coins').innerText = coins; localStorage.setItem('my_slot_coins', coins);
+        }
+    </script>
+</body>
+</html>

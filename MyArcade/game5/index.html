@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>サイバーロック</title>
+    <style>
+        body { text-align: center; font-family: sans-serif; background: #0c1020; color: #00ffcc; margin: 0; padding-top: 30px; }
+        .back-btn { background: #334; color: #fff; font-size: 14px; padding: 8px 15px; border: none; }
+        .grid { display: grid; grid-template-columns: repeat(2, 100px); gap: 15px; justify-content: center; margin: 30px auto; }
+        .panel { width: 100px; height: 100px; background: #1a2340; border: 2px solid #00ffcc; border-radius: 10px; }
+        .active { background: #00ffcc; box-shadow: 0 0 20px #00ffcc; }
+    </style>
+</head>
+<body>
+    <button class="back-btn" onclick="location.href='../index.html'">🏠 戻る</button>
+    <h1>🔐 サイバーロック</h1>
+    <h2>ステージ: <span id="lvl">1</span> (最高: <span id="high">1</span>)</h2>
+    <p id="status">光る順番を覚えろ！</p>
+    <div class="grid">
+        <div class="panel" id="p0" onclick="tap(0)"></div><div class="panel" id="p1" onclick="tap(1)"></div>
+        <div class="panel" id="p2" onclick="tap(2)"></div><div class="panel" id="p3" onclick="tap(3)"></div>
+    </div>
+    <script>
+        let seq = [], userSeq = [], lvl = 1, acceptInput = false;
+        let high = localStorage.getItem('lock_high') || 1; document.getElementById('high').innerText = high;
+        function start() { userSeq = []; acceptInput = false; document.getElementById('status').innerText = "記憶中..."; seq.push(Math.floor(Math.random()*4)); playSeq(0); }
+        function playSeq(idx) {
+            if(idx >= seq.length) { acceptInput = true; document.getElementById('status').innerText = "さあ、解除しろ！"; return; }
+            let p = document.getElementById('p'+seq[idx]); p.classList.add('active');
+            setTimeout(() => { p.classList.remove('active'); setTimeout(() => playSeq(idx+1), 200); }, 400);
+        }
+        function tap(id) {
+            if(!acceptInput) return; userSeq.push(id);
+            if(userSeq[userSeq.length-1] !== seq[userSeq.length-1]) { alert("ロック作動！最初からやり直し！"); seq = []; lvl = 1; document.getElementById('lvl').innerText = lvl; start(); return; }
+            if(userSeq.length === seq.length) { lvl++; document.getElementById('lvl').innerText = lvl; if(lvl > high) { high = lvl; localStorage.setItem('lock_high', high); document.getElementById('high').innerText = high; } setTimeout(start, 800); }
+        }
+        start();
+    </script>
+</body>
+</html>
